@@ -8,6 +8,11 @@ pipeline {
         def date = new Date().format('yyyyMMdd')
         def release = "${env.BUILD_NUMBER}"
         def releaseId = "${env.BUILD_ID}"
+
+        PROJECT_ID = 'grupor3microservicios'
+        CLUSTER_NAME = 'apps-microservicios-cluster-1'
+        LOCATION = 'us-central1-c'
+        CREDENTIALS_ID = 'kubernetesGKE'
     }
     stages {
         stage('Build Maven') {
@@ -39,7 +44,34 @@ pipeline {
                 }
             }
         }
+        stage('Deploy to K8s') {
+            environment {
+                def tag = "${releaseId}-${date}-r${release}"
+            }
+            steps{
+                echo "Deployment started ..."
+                sh 'ls -ltr'
+                sh 'pwd'
+                sh "sed -i 's/tagversion/${tag}/g' deployment/config-server.yaml"
+                step([$class: 'KubernetesEngineBuilder', \
+                  projectId: env.PROJECT_ID, \
+                  clusterName: env.CLUSTER_NAME, \
+                  location: env.LOCATION, \
+                  manifestPattern: 'deployment/config-server.yaml', \
+                  credentialsId: env.CREDENTIALS_ID, \
+                  verifyDeployments: true])
+                
+                step([$class: 'KubernetesEngineBuilder', \
+                  projectId: env.PROJECT_ID, \
+                  clusterName: env.CLUSTER_NAME, \
+                  location: env.LOCATION, \
+                  manifestPattern: 'microservicios-configmap.yaml', \
+                  credentialsId: env.CREDENTIALS_ID, \
+                  verifyDeployments: true])
+            }
+        }
     }
+    
     post {
         always {
             deleteDir() // Eliminar el directorio de trabajo después de finalizar el pipeline
