@@ -16,7 +16,7 @@ spec:
     spec: 
       containers:
         - name: config-server
-          image: jhonattan25/app-microservicios-config-server:1.0.0
+          image: jhonattan25/app-microservicios-config-server:tagversion
           ports:
           - containerPort: 8071
 ---
